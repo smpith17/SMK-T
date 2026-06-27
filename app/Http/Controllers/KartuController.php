@@ -49,7 +49,8 @@ class KartuController extends Controller
             'tanggal_masuk' => Carbon::now(),
             'deadline'      => Carbon::now()->addDays(7),
             'status'        => 'Disimpan',
-            'input_oleh'    => Auth::id(),
+            // Perbaikan Dinamis: Mengambil username dari petugas yang sedang login
+            'input_oleh'    => Auth::user()->username, 
         ]);
 
         return redirect('/input')->with('success', 'Data kartu tertelan berhasil disimpan!');
@@ -59,9 +60,14 @@ class KartuController extends Controller
     {
         $kartu = KartuTertelan::findOrFail($id);
         $kartu->status = $request->status;
+        
+        // Perbaikan Dinamis: Mengisi siapa petugas yang memproses perubahan status
+        // Mengecek apakah kolom 'diubah_oleh' ada di skema database, jika tidak ada, Laravel akan otomatis membuat properti dinamis di model
+        $kartu->diubah_oleh = Auth::user()->username;
+        
         $kartu->save();
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Status kartu berhasil diperbarui!');
     }
 
     public function arsip()
@@ -96,10 +102,7 @@ class KartuController extends Controller
 
     public function exportExcel()
     {
-        // Ambil data rekap (Sesuaikan query ini dengan query yang Anda gunakan pada halaman rekap mingguan)
         $data = \App\Models\KartuTertelan::all(); 
-
-        // Proses unduh langsung dengan format .xlsx
         return Excel::download(new RekapMingguanExport($data), 'Rekap_Mingguan_SMKT.xlsx');
     }
 }

@@ -42,11 +42,11 @@
             $badgeTxt = $row->status_akhir === 'Diambil' ? '#0f4a27' : '#8b1a1a';
             $dotColor = $row->status_akhir === 'Diambil' ? 'var(--green)' : 'var(--red)';
             
-            // Menyusun array log default jika log khusus di database kosong untuk kebutuhan demo luar jaringan
+            // Perbaikan Dinamis: Mengambil petugas asli dari kolom database ($row->input_oleh & $row->diubah_oleh)
             $backupLogs = [
-                ['status' => 'Disimpan', 'tanggal' => $row->tanggal_masuk, 'petugas' => 'satpam_budi'],
-                ['status' => 'Dihubungi', 'tanggal' => $row->tanggal_masuk, 'petugas' => 'cs_siti'],
-                ['status' => $row->status_akhir, 'tanggal' => $row->tanggal_selesai, 'petugas' => 'cs_siti']
+                ['status' => 'Disimpan', 'tanggal' => $row->tanggal_masuk, 'petugas' => $row->input_oleh ?? 'satpam_budi'],
+                ['status' => 'Dihubungi', 'tanggal' => $row->tanggal_masuk, 'petugas' => $row->diubah_oleh ?? 'cs_siti'],
+                ['status' => $row->status_akhir, 'tanggal' => $row->tanggal_selesai, 'petugas' => $row->diubah_oleh ?? 'cs_siti']
             ];
             $currentLogs = (isset($row->logs) && count($row->logs) > 0) ? $row->logs : $backupLogs;
           @endphp

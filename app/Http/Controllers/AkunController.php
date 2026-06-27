@@ -118,26 +118,31 @@ class AkunController extends Controller
         return redirect('/akun')->with('success', "Akun {$user->nama} berhasil {$keterangan}.");
     }
 
-    /**
-     * FUNGSI TERBARU: Menghapus akun petugas dari sistem
-     */
     public function destroy($id)
     {
-        // 1. Pastikan yang menghapus adalah Admin
         $this->checkAdmin();
-
-        // 2. Cari data usernya, kalau tidak ada langsung gagalkan (404)
         $user = User::findOrFail($id);
 
-        // 3. Jaga-jaga perlindungan berlapis agar tidak bisa menghapus diri sendiri
         if ($user->id === Auth::id()) {
             return redirect('/akun')->with('error', 'Keamanan Sistem: Anda tidak boleh menghapus akun Anda sendiri yang sedang digunakan.');
         }
 
-        // 4. Eksekusi hapus dari database
         $user->delete();
-
-        // 5. Kembalikan dengan sinyal sukses
         return redirect('/akun')->with('success', "Akun \"{$user->nama}\" telah berhasil dihapus dari sistem.");
+    }
+
+    /**
+     * Mereset password akun kembali bawaan 'password123'
+     */
+    public function resetPassword($id)
+    {
+        $this->checkAdmin();
+        $user = User::findOrFail($id);
+
+        // Perbaikan: Diubah menjadi password123
+        $user->password = Hash::make('password123');
+        $user->save();
+
+        return redirect('/akun')->with('success', "Kata sandi untuk akun petugas \"{$user->nama}\" berhasil direset kembali menjadi: password123");
     }
 }
