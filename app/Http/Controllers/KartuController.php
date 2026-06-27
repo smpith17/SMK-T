@@ -181,16 +181,21 @@ class KartuController extends Controller
     }
 
     /**
-     * BARU: Menghapus data kartu tertelan secara permanen via API (Menyelesaikan Error 405 Method Not Allowed)
+     * REVISI SAKTI: Menghapus data kartu beserta log_audit yang mengikatnya
      */
     public function destroy($id)
     {
         $kartu = KartuTertelan::findOrFail($id);
+        
+        // 1. Bersihkan dulu history log audit biar MySQL mengizinkan penghapusan
+        DB::table('log_audit')->where('kartu_id', $id)->delete();
+
+        // 2. Sekarang baru aman untuk menghapus data kartunya
         $kartu->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Data kartu tertelan berhasil dihapus secara permanen via API!'
+            'message' => 'Data kartu tertelan beserta history audit log-nya berhasil dihapus permanen!'
         ], 200);
     }
 }
