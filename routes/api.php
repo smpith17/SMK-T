@@ -26,4 +26,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/kartu', [KartuController::class, 'index']);          // CS/Admin - Lihat Daftar
     Route::put('/kartu/{id}', [KartuController::class, 'updateStatus']); // CS/Admin - Ubah Status
     Route::get('/kartu', [KartuController::class, 'index']);
+    Route::delete('/kartu/{id}', [KartuController::class, 'destroy']);
 });
