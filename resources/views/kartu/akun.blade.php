@@ -3,6 +3,40 @@
 @section('title', 'Manajemen Akun')
 
 @section('content')
+
+@if(session('success'))
+  <div style="padding: 12px 16px; background: #e6f4ea; color: #137333; border: 1px solid #ceead6; border-radius: 8px; margin-bottom: 16px; font-size: 13px; font-weight: 500;">
+    ✅ {{ session('success') }}
+  </div>
+@endif
+
+@if(session('error'))
+  <div style="padding: 12px 16px; background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; border-radius: 8px; margin-bottom: 16px; font-size: 13px; font-weight: 500;">
+    ❌ {{ session('error') }}
+  </div>
+@endif
+
+@if($errors->tambah->any())
+  <div style="padding: 12px 16px; background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; border-radius: 8px; margin-bottom: 16px; font-size: 13px;">
+    ❌ <strong>Gagal menambah akun:</strong>
+    <ul style="margin: 4px 0 0 20px; padding: 0;">
+      @foreach($errors->tambah->all() as $error)
+        <li>{{ $error }}</li>
+      @endforeach
+    </ul>
+  </div>
+@endif
+
+@if($errors->edit->any())
+  <div style="padding: 12px 16px; background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; border-radius: 8px; margin-bottom: 16px; font-size: 13px;">
+    ❌ <strong>Gagal memperbarui akun:</strong>
+    <ul style="margin: 4px 0 0 20px; padding: 0;">
+      @foreach($errors->edit->all() as $error)
+        <li>{{ $error }}</li>
+      @endforeach
+    </ul>
+  </div>
+@endif
 <div class="page-hdr" style="margin-bottom: 20px;">
   <div>
     <div class="page-title" style="font-size: 20px; font-weight: 700; color: var(--text);">Manajemen Akun</div>
