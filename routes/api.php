@@ -2,12 +2,20 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\KartuController; // <-- BARU: Import KartuController di sini
+use App\Http\Controllers\KartuController; 
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
 
 // Public routes (tidak perlu login)
-Route::post('/login', [AuthController::class, 'login']);
+// SEBELUMNYA: [AuthController::class, 'login'] (Bikin error session di Postman)
+// SEKARANG: Diarahkan ke 'loginApi' khusus untuk merespons dengan JSON murni
+Route::post('/login', [AuthController::class, 'loginApi']);
 
-// Protected routes (harus login)
+// Protected routes (harus login / membawa Bearer Token Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);

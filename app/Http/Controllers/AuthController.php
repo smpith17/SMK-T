@@ -10,6 +10,9 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    /**
+     * Jalur WEB: Melayani login dari form website biasa (Menggunakan Session & Redirect)
+     */
     public function login(Request $request)
     {
         $credentials = $request->only('username', 'password');
@@ -59,6 +62,49 @@ class AuthController extends Controller
         return back()->withErrors(['username' => 'Username atau password salah!']);
     }
 
+    /**
+     * Jalur API: Melayani login khusus untuk POSTMAN (Stateless, Tanpa Session, Return JSON)
+     */
+    public function loginApi(Request $request)
+    {
+        // 1. Validasi input JSON dari Postman
+        $credentials = $request->validate([
+            'username' => 'required',
+            'password' => 'required',
+        ]);
+
+        // 2. Jalankan proses autentikasi akun
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+            
+            // Pembuatan token otomatis (Aman: Mendukung Laravel Sanctum, punya fallback jika belum di-install)
+            $token = method_exists($user, 'createToken') 
+                ? $user->createToken('api-token')->plainTextToken 
+                : Str::random(60);
+
+            // 3. Kembalikan response JSON murni (Status 200 OK)
+            return response()->json([
+                'success' => true,
+                'message' => 'Login berhasil melalui API!',
+                'token'   => $token,
+                'data'    => [
+                    'user_id'  => $user->id,
+                    'username' => $user->username,
+                    'role'     => $user->role
+                ]
+            ], 200);
+        }
+
+        // 4. Jika gagal login, kirim respons error JSON (Status 401 Unauthorized)
+        return response()->json([
+            'success' => false,
+            'message' => 'Username atau password salah!'
+        ], 401);
+    }
+
+    /**
+     * Jalur WEB: Proses logout dari website
+     */
     public function logout(Request $request)
     {
         Auth::logout();
