@@ -7,6 +7,7 @@ use App\Models\KartuTertelan;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Exports\RekapMingguanExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -14,9 +15,8 @@ class KartuController extends Controller
 {
     public function dashboard()
     {
-        $kartu = KartuTertelan::with(['user_input', 'user_ubah'])
-            ->whereNotIn('status', ['Diambil', 'Dimusnahkan'])
-            ->get();
+        $kartu = KartuTertelan::with('user_input')
+            ->whereNotIn('status', ['Diambil', 'Dimusnahkan'])->get();
 
         foreach ($kartu as $k) {
             $k->sisa_hari = (int) Carbon::now()->diffInDays(Carbon::parse($k->deadline), false);
@@ -24,7 +24,6 @@ class KartuController extends Controller
 
         $kritisCount = $kartu->where('sisa_hari', '<=', 3)->count();
 
-        // Stat card ke-4 sesuai prototype
         $selesaiBulanIni = KartuTertelan::whereIn('status', ['Diambil', 'Dimusnahkan'])
             ->whereMonth('updated_at', Carbon::now()->month)
             ->whereYear('updated_at', Carbon::now()->year)
@@ -51,7 +50,6 @@ class KartuController extends Controller
             'tanggal_masuk' => Carbon::now(),
             'deadline'      => Carbon::now()->addDays(7),
             'status'        => 'Disimpan',
-            // Menyimpan ID (UUID) User untuk menghindari error Integrity Constraint Violation
             'input_oleh'    => Auth::id(), 
         ]);
 
@@ -60,21 +58,22 @@ class KartuController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
+        $request->validate([
+            'status' => 'required'
+        ]);
+
         $kartu = KartuTertelan::findOrFail($id);
         $kartu->status = $request->status;
         
-        // Menyimpan ID petugas yang memproses perubahan status
-        $kartu->diubah_oleh = Auth::id();
-        
-        $kartu->save();
+        // AMAN: Kita hapus baris diubah_oleh karena sistem log_audit otomatis kamu sudah mencatatnya
+        $kartu->save(); 
 
         return redirect()->back()->with('success', 'Status kartu berhasil diperbarui!');
     }
 
     public function arsip()
     {
-        // Mengambil data arsip beserta relasi user penginput dan pengubahnya
-        $arsip = KartuTertelan::with(['user_input', 'user_ubah'])
+        $arsip = KartuTertelan::with('user_input')
             ->whereIn('status', ['Diambil', 'Dimusnahkan'])
             ->get();
 
@@ -82,6 +81,35 @@ class KartuController extends Controller
             $a->tanggal_selesai = Carbon::parse($a->updated_at)->format('d M Y');
             $a->tanggal_masuk   = Carbon::parse($a->tanggal_masuk)->format('d M Y');
             $a->status_akhir    = $a->status;
+
+            // Mengambil log asli dari tabel log_audit bawaan sistem dikombinasikan dengan tabel users
+            $dbLogs = DB::table('log_audit')
+                ->join('users', 'log_audit.user_id', '=', 'users.id')
+                ->where('log_audit.kartu_id', $a->id)
+                ->select('log_audit.*', 'users.username')
+                ->orderBy('log_audit.created_at', 'asc')
+                ->get();
+
+            $formattedLogs = [];
+
+            // Step 1: Default Log saat pertama kali disimpan
+            $formattedLogs[] = [
+                'status' => 'Disimpan',
+                'tanggal' => $a->tanggal_masuk,
+                'petugas' => $a->user_input->username ?? 'Sistem'
+            ];
+
+            // Step 2: Melacak seluruh log perubahan dari tabel log_audit secara dinamis
+            foreach ($dbLogs as $log) {
+                $formattedLogs[] = [
+                    'status' => $log->new_status ?? $log->action,
+                    'tanggal' => Carbon::parse($log->created_at)->format('d M Y'),
+                    'petugas' => $log->username ?? 'Petugas'
+                ];
+            }
+
+            // Menyisipkan hasil format ke properti dinamis model agar dibaca di Blade
+            $a->custom_logs = $formattedLogs;
         }
 
         return view('kartu.arsip', compact('arsip'));

@@ -42,16 +42,8 @@
             $badgeTxt = $row->status_akhir === 'Diambil' ? '#0f4a27' : '#8b1a1a';
             $dotColor = $row->status_akhir === 'Diambil' ? 'var(--green)' : 'var(--red)';
             
-            // Mengambil nama user secara dinamis melalui relasi Eloquent
-            $namaPenginput = $row->user_input->username ?? 'satpam_budi';
-            $namaPengubah = $row->user_ubah->username ?? 'cs_siti';
-
-            $backupLogs = [
-                ['status' => 'Disimpan', 'tanggal' => $row->tanggal_masuk, 'petugas' => $namaPenginput],
-                ['status' => 'Dihubungi', 'tanggal' => $row->tanggal_masuk, 'petugas' => $namaPengubah],
-                ['status' => $row->status_akhir, 'tanggal' => $row->tanggal_selesai, 'petugas' => $namaPengubah]
-            ];
-            $currentLogs = (isset($row->logs) && count($row->logs) > 0) ? $row->logs : $backupLogs;
+            // Mengambil log data dinamis terstruktur langsung dari database log_audit melalui controller
+            $currentLogs = $row->custom_logs ?? [];
           @endphp
           <tr class="arsip-row" data-nama="{{ strtolower($row->nama_nasabah) }}" data-status="{{ $row->status_akhir }}" style="border-bottom: 1px solid #e5e7eb;">
             <td style="padding: 14px;"><span style="font-family: 'Courier New', monospace; font-size: 13px; color: var(--text2);">{{ $row->nomor_kartu }}</span></td>

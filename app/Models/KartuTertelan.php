@@ -11,7 +11,6 @@ class KartuTertelan extends Model
 
     protected $table = 'kartu_tertelan';
     
-    // Menentukan bahwa primary key menggunakan string (UUID)
     protected $keyType = 'string';
     public $incrementing = false;
 
@@ -24,19 +23,12 @@ class KartuTertelan extends Model
         'tanggal_masuk',
         'deadline',
         'status',
-        'input_oleh',
-        'diubah_oleh'
+        'input_oleh'
     ];
 
-    // Relasi ke tabel Users untuk data pembuat/penginput kartu
+    // Relasi ke tabel Users untuk melihat siapa yang menginput kartu pertama kali
     public function user_input()
     {
         return $this->belongsTo(User::class, 'input_oleh');
-    }
-
-    // Relasi ke tabel Users untuk data petugas yang mengubah status terakhir
-    public function user_ubah()
-    {
-        return $this->belongsTo(User::class, 'diubah_oleh');
     }
 }
