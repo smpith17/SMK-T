@@ -14,7 +14,9 @@ class KartuController extends Controller
 {
     public function dashboard()
     {
-        $kartu = KartuTertelan::whereNotIn('status', ['Diambil', 'Dimusnahkan'])->get();
+        $kartu = KartuTertelan::with(['user_input', 'user_ubah'])
+            ->whereNotIn('status', ['Diambil', 'Dimusnahkan'])
+            ->get();
 
         foreach ($kartu as $k) {
             $k->sisa_hari = (int) Carbon::now()->diffInDays(Carbon::parse($k->deadline), false);
@@ -49,8 +51,8 @@ class KartuController extends Controller
             'tanggal_masuk' => Carbon::now(),
             'deadline'      => Carbon::now()->addDays(7),
             'status'        => 'Disimpan',
-            // Perbaikan Dinamis: Mengambil username dari petugas yang sedang login
-            'input_oleh'    => Auth::user()->username, 
+            // Menyimpan ID (UUID) User untuk menghindari error Integrity Constraint Violation
+            'input_oleh'    => Auth::id(), 
         ]);
 
         return redirect('/input')->with('success', 'Data kartu tertelan berhasil disimpan!');
@@ -61,9 +63,8 @@ class KartuController extends Controller
         $kartu = KartuTertelan::findOrFail($id);
         $kartu->status = $request->status;
         
-        // Perbaikan Dinamis: Mengisi siapa petugas yang memproses perubahan status
-        // Mengecek apakah kolom 'diubah_oleh' ada di skema database, jika tidak ada, Laravel akan otomatis membuat properti dinamis di model
-        $kartu->diubah_oleh = Auth::user()->username;
+        // Menyimpan ID petugas yang memproses perubahan status
+        $kartu->diubah_oleh = Auth::id();
         
         $kartu->save();
 
@@ -72,7 +73,10 @@ class KartuController extends Controller
 
     public function arsip()
     {
-        $arsip = KartuTertelan::whereIn('status', ['Diambil', 'Dimusnahkan'])->get();
+        // Mengambil data arsip beserta relasi user penginput dan pengubahnya
+        $arsip = KartuTertelan::with(['user_input', 'user_ubah'])
+            ->whereIn('status', ['Diambil', 'Dimusnahkan'])
+            ->get();
 
         foreach ($arsip as $a) {
             $a->tanggal_selesai = Carbon::parse($a->updated_at)->format('d M Y');

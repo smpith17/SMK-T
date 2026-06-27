@@ -42,11 +42,14 @@
             $badgeTxt = $row->status_akhir === 'Diambil' ? '#0f4a27' : '#8b1a1a';
             $dotColor = $row->status_akhir === 'Diambil' ? 'var(--green)' : 'var(--red)';
             
-            // Perbaikan Dinamis: Mengambil petugas asli dari kolom database ($row->input_oleh & $row->diubah_oleh)
+            // Mengambil nama user secara dinamis melalui relasi Eloquent
+            $namaPenginput = $row->user_input->username ?? 'satpam_budi';
+            $namaPengubah = $row->user_ubah->username ?? 'cs_siti';
+
             $backupLogs = [
-                ['status' => 'Disimpan', 'tanggal' => $row->tanggal_masuk, 'petugas' => $row->input_oleh ?? 'satpam_budi'],
-                ['status' => 'Dihubungi', 'tanggal' => $row->tanggal_masuk, 'petugas' => $row->diubah_oleh ?? 'cs_siti'],
-                ['status' => $row->status_akhir, 'tanggal' => $row->tanggal_selesai, 'petugas' => $row->diubah_oleh ?? 'cs_siti']
+                ['status' => 'Disimpan', 'tanggal' => $row->tanggal_masuk, 'petugas' => $namaPenginput],
+                ['status' => 'Dihubungi', 'tanggal' => $row->tanggal_masuk, 'petugas' => $namaPengubah],
+                ['status' => $row->status_akhir, 'tanggal' => $row->tanggal_selesai, 'petugas' => $namaPengubah]
             ];
             $currentLogs = (isset($row->logs) && count($row->logs) > 0) ? $row->logs : $backupLogs;
           @endphp
@@ -80,7 +83,7 @@
     <div style="font-size: 12px; color: var(--text3); margin-bottom: 18px; font-family: 'Courier New', monospace;">Nasabah: <span id="logNama"></span> · Riwayat Sistem</div>
     
     <div id="logTimelineContainer" style="display: flex; flex-direction: column;">
-      </div>
+    </div>
     
     <div style="margin-top: 20px; text-align: right;">
       <button class="btn btn-outline" style="padding: 8px 16px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 6px; background: white; cursor: pointer; font-weight: 600;" onclick="closeLogModal()">Tutup</button>
@@ -89,7 +92,6 @@
 </div>
 
 <script>
-// Filter realtime data tabel arsip riwayat
 function filterArsip() {
   const searchVal = document.getElementById('searchArsip').value.toLowerCase();
   const statusVal = document.getElementById('filterStatusArsip').value;
@@ -104,17 +106,15 @@ function filterArsip() {
   });
 }
 
-// Menampilkan modal log dan membuat timeline dinamis sesuai data baris tabel
 function showLogModal(nama, noKartu, logsJson) {
   document.getElementById('logNama').textContent = nama;
   document.getElementById('logNoKartu').textContent = noKartu;
   
   const logs = JSON.parse(logsJson);
   const container = document.getElementById('logTimelineContainer');
-  container.innerHTML = ''; // Kosongkan sisa renderan lama
+  container.innerHTML = ''; 
   
   logs.forEach((log, index) => {
-    // Penentuan skema warna indikator lingkaran (dot) berdasarkan status
     let dotColor = 'var(--teal)';
     let statusText = `Input — Status: ${log.status}`;
     
@@ -131,7 +131,6 @@ function showLogModal(nama, noKartu, logsJson) {
 
     const isLast = index === logs.length - 1;
     
-    // Pembuatan baris struktur HTML timeline stepper
     const itemHtml = `
       <div style="display: flex; gap: 12px; padding: 4px 0;">
         <div style="display: flex; flex-direction: column; align-items: center; padding-top: 4px;">
