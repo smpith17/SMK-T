@@ -65,7 +65,6 @@ class KartuController extends Controller
         $kartu = KartuTertelan::findOrFail($id);
         $kartu->status = $request->status;
         
-        // AMAN: Kita hapus baris diubah_oleh karena sistem log_audit otomatis kamu sudah mencatatnya
         $kartu->save(); 
 
         return redirect()->back()->with('success', 'Status kartu berhasil diperbarui!');
@@ -92,14 +91,7 @@ class KartuController extends Controller
 
             $formattedLogs = [];
 
-            // Step 1: Default Log saat pertama kali disimpan
-            $formattedLogs[] = [
-                'status' => 'Disimpan',
-                'tanggal' => $a->tanggal_masuk,
-                'petugas' => $a->user_input->username ?? 'Sistem'
-            ];
-
-            // Step 2: Melacak seluruh log perubahan dari tabel log_audit secara dinamis
+            // Melacak seluruh log perubahan dari tabel log_audit secara dinamis (Termasuk log input pertama)
             foreach ($dbLogs as $log) {
                 $formattedLogs[] = [
                     'status' => $log->new_status ?? $log->action,
