@@ -30,7 +30,7 @@ class AkunController extends Controller
             'nama'     => 'required|min:2|max:100',
             'username' => 'required|min:3|max:50|unique:users,username',
             'role'     => 'required|in:satpam,cs,admin',
-            'password' => 'required|min:6', // <--- Perbaikan: dihapus '|confirmed'
+            'password' => 'required|min:6',
         ], [
             'nama.required'      => 'Nama wajib diisi.',
             'nama.min'           => 'Nama minimal 2 karakter.',
@@ -77,7 +77,7 @@ class AkunController extends Controller
         ];
 
         if ($request->filled('password')) {
-            $rules['password']              = 'min:6'; // <--- Perbaikan: dihapus '|confirmed'
+            $rules['password']              = 'min:6';
             $messages['password.min']       = 'Password minimal 6 karakter.';
         }
 
@@ -116,5 +116,28 @@ class AkunController extends Controller
 
         $keterangan = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';
         return redirect('/akun')->with('success', "Akun {$user->nama} berhasil {$keterangan}.");
+    }
+
+    /**
+     * FUNGSI TERBARU: Menghapus akun petugas dari sistem
+     */
+    public function destroy($id)
+    {
+        // 1. Pastikan yang menghapus adalah Admin
+        $this->checkAdmin();
+
+        // 2. Cari data usernya, kalau tidak ada langsung gagalkan (404)
+        $user = User::findOrFail($id);
+
+        // 3. Jaga-jaga perlindungan berlapis agar tidak bisa menghapus diri sendiri
+        if ($user->id === Auth::id()) {
+            return redirect('/akun')->with('error', 'Keamanan Sistem: Anda tidak boleh menghapus akun Anda sendiri yang sedang digunakan.');
+        }
+
+        // 4. Eksekusi hapus dari database
+        $user->delete();
+
+        // 5. Kembalikan dengan sinyal sukses
+        return redirect('/akun')->with('success', "Akun \"{$user->nama}\" telah berhasil dihapus dari sistem.");
     }
 }
