@@ -179,4 +179,18 @@ class KartuController extends Controller
         $data = \App\Models\KartuTertelan::all(); 
         return Excel::download(new RekapMingguanExport($data), 'Rekap_Mingguan_SMKT.xlsx');
     }
+
+    /**
+     * BARU: Menghapus data kartu tertelan secara permanen via API (Menyelesaikan Error 405 Method Not Allowed)
+     */
+    public function destroy($id)
+    {
+        $kartu = KartuTertelan::findOrFail($id);
+        $kartu->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data kartu tertelan berhasil dihapus secara permanen via API!'
+        ], 200);
+    }
 }
