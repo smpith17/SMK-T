@@ -13,6 +13,31 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class KartuController extends Controller
 {
+    /**
+     * BARU: Menampilkan daftar semua kartu tertelan khusus untuk Jalur API (Postman)
+     */
+    public function index(Request $request)
+    {
+        // Mengambil semua data kartu beserta informasi petugas yang menginputnya
+        $kartu = KartuTertelan::with('user_input')->get();
+
+        // Hitung sisa hari secara dinamis untuk setiap kartu
+        foreach ($kartu as $k) {
+            $k->sisa_hari = (int) Carbon::now()->diffInDays(Carbon::parse($k->deadline), false);
+        }
+
+        // Jika request datang dari Postman / API, kirim response JSON
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Daftar semua kartu tertelan berhasil diambil!',
+                'data'    => $kartu
+            ], 200);
+        }
+
+        return response()->json(['data' => $kartu]);
+    }
+
     public function dashboard()
     {
         $kartu = KartuTertelan::with('user_input')
@@ -32,6 +57,9 @@ class KartuController extends Controller
         return view('kartu.dashboard', compact('kartu', 'kritisCount', 'selesaiBulanIni'));
     }
 
+    /**
+     * HYBRID: Menyimpan data kartu baru (Mendukung Web Form & Postman API)
+     */
     public function simpan(Request $request)
     {
         $request->validate([
@@ -41,7 +69,7 @@ class KartuController extends Controller
             'lokasi_simpan' => 'required',
         ]);
 
-        KartuTertelan::create([
+        $kartu = KartuTertelan::create([
             'id'            => (string) Str::uuid(),
             'nomor_kartu'   => $request->nomor_kartu,
             'nama_nasabah'  => $request->nama_nasabah,
@@ -53,9 +81,22 @@ class KartuController extends Controller
             'input_oleh'    => Auth::id(), 
         ]);
 
+        // Kondisional: Jika mendeteksi request API, return JSON murni status 210/201
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Data kartu tertelan berhasil disimpan via API!',
+                'data'    => $kartu
+            ], 201);
+        }
+
+        // Jika dari form website biasa, lakukan redirect
         return redirect('/input')->with('success', 'Data kartu tertelan berhasil disimpan!');
     }
 
+    /**
+     * HYBRID: Mengubah status kartu (Mendukung Web Action & Postman API)
+     */
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -64,9 +105,18 @@ class KartuController extends Controller
 
         $kartu = KartuTertelan::findOrFail($id);
         $kartu->status = $request->status;
-        
         $kartu->save(); 
 
+        // Kondisional: Jika mendeteksi request API, return JSON murni status 200 OK
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Status kartu berhasil diperbarui via API!',
+                'data'    => $kartu
+            ], 200);
+        }
+
+        // Jika dari tombol di website, kembalikan ke halaman sebelumnya
         return redirect()->back()->with('success', 'Status kartu berhasil diperbarui!');
     }
 
