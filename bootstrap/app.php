@@ -12,7 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        
+        // Mengizinkan Laravel membaca IP asli pengguna di balik proxy Railway
+        // Ini wajib agar fitur Throttling / Rate Limiting keamanan bisa berfungsi
+        $middleware->trustProxies(at: '*');
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
