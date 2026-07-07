@@ -15,8 +15,8 @@ Route::get('/', function () {
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::get('/logout', [AuthController::class, 'logout']);
 
-// --- RUTE TERPROTEKSI (Wajib Login & Dibatasi 60 Request/Menit) ---
-Route::middleware(['auth', 'throttle:60,1'])->group(function () {
+// --- RUTE TERPROTEKSI (Wajib Login & Dibatasi 10 Request/Menit untuk Testing) ---
+Route::middleware(['auth', 'throttle:10,1'])->group(function () {
 
     // ==========================================
     // 1. SEMUA ROLE (Satpam, CS, Admin)
@@ -50,7 +50,6 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
         return app(KartuController::class)->rekap();
     });
 
-    // Perbaikan Keamanan: Unduh Excel dikunci hanya untuk CS dan Admin
     Route::get('/rekap/excel', function () {
         if (!in_array(strtolower(auth()->user()->role), ['cs', 'admin'])) abort(403);
         return app(KartuController::class)->exportExcel();
