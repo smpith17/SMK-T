@@ -207,6 +207,79 @@ tr.row-w:hover td{background:#fff3cc}
   .card-header{gap:6px}
   .search-box{width:100%;order:3}
 }
+
+/* ========================================================
+   STYLING KHUSUS PAGINATION LARAVEL (BOOTSTRAP 5) 
+======================================================== */
+
+/* 1. Sembunyikan versi mobile bawaan Laravel agar tidak ganda */
+nav > div:first-child {
+    display: none !important;
+}
+
+/* 2. Rapikan wadah utama (Desktop View) agar sejajar */
+nav > div:last-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* 3. Rapikan teks keterangan "Showing 1 to 10..." */
+nav > div:last-child > div:first-child p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text2, #4b5563);
+}
+
+/* 4. Percantik daftar tombol halamannya */
+.pagination {
+    display: flex;
+    padding-left: 0;
+    list-style: none;
+    gap: 6px;
+    margin: 0;
+}
+
+/* 5. Desain kotak tombol nomor halaman */
+.page-item .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2, #4b5563);
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* 6. Desain saat tombol nomor halaman sedang aktif (di-klik) */
+.page-item.active .page-link {
+    background-color: var(--teal, #0d9488);
+    border-color: var(--teal, #0d9488);
+    color: white;
+    z-index: 2;
+}
+
+/* 7. Efek hover saat kursor diarahkan ke tombol */
+.page-item .page-link:hover:not(.active) {
+    background-color: #f3f4f6;
+    color: var(--teal, #0d9488);
+}
+
+/* 8. Desain saat tombol dinonaktifkan (misal: halaman pertama tidak bisa di-Previous) */
+.page-item.disabled .page-link {
+    color: #9ca3af;
+    background-color: #f9fafb;
+    cursor: not-allowed;
+}
 </style>
 </head>
 <body>
