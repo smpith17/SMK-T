@@ -15,12 +15,32 @@ class KartuController extends Controller
 {
     public function index(Request $request)
     {
-        $kartu = KartuTertelan::with('user_input')->get();
+        // 1. Inisiasi Query Dasar
+        $query = KartuTertelan::with('user_input')->orderBy('created_at', 'desc');
 
+        // 2. FITUR FILTERING (Membaca parameter dari URL Postman)
+        // Filter berdasarkan Status
+        if ($request->has('status') && $request->status != '') {
+            $query->where('status', $request->status);
+        }
+        
+        // Pencarian (Search) berdasarkan Nama Nasabah atau Nomor Kartu
+        if ($request->has('search') && $request->search != '') {
+            $query->where(function($q) use ($request) {
+                $q->where('nama_nasabah', 'like', '%' . $request->search . '%')
+                  ->orWhere('nomor_kartu', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // 3. FITUR PAGINATION (Mengubah get() menjadi paginate())
+        $kartu = $query->paginate(10);
+
+        // Hitung sisa hari secara dinamis
         foreach ($kartu as $k) {
             $k->sisa_hari = (int) Carbon::now()->diffInDays(Carbon::parse($k->deadline), false);
         }
 
+        // Kembalikan Response JSON untuk Postman / API
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
                 'success' => true,
