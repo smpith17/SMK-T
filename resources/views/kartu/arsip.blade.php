@@ -14,7 +14,7 @@
   <div class="card-header" style="padding: 16px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
     <span class="card-title" style="font-weight: 700; color: var(--text);">Riwayat Selesai</span>
     <div style="display: flex; gap: 8px; align-items: center;">
-      <input type="text" class="search-box" id="searchArsip" placeholder="🔍 Cari nama..." style="background: var(--bg3); border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 7px 12px; font-size: 13px; width: 180px; outline: none;" oninput="filterArsip()">
+      <input type="text" class="search-box" id="searchArsip" placeholder="🔍 Cari nama (halaman ini)..." style="background: var(--bg3); border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 7px 12px; font-size: 13px; width: 180px; outline: none;" oninput="filterArsip()">
       <select class="sel-filter" id="filterStatusArsip" style="background: var(--bg3); border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 7px 10px; font-size: 12px; color: var(--text2); outline: none; cursor: pointer;" onchange="filterArsip()">
         <option value="">Semua Status</option>
         <option value="Diambil">Diambil Nasabah</option>
@@ -42,7 +42,6 @@
             $badgeTxt = $row->status_akhir === 'Diambil' ? '#0f4a27' : '#8b1a1a';
             $dotColor = $row->status_akhir === 'Diambil' ? 'var(--green)' : 'var(--red)';
             
-            // Mengambil log data dinamis terstruktur langsung dari database log_audit melalui controller
             $currentLogs = $row->custom_logs ?? [];
           @endphp
           <tr class="arsip-row" data-nama="{{ strtolower($row->nama_nasabah) }}" data-status="{{ $row->status_akhir }}" style="border-bottom: 1px solid #e5e7eb;">
@@ -67,6 +66,11 @@
       </tbody>
     </table>
   </div>
+  
+  <div style="padding: 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; overflow-x: auto;">
+    {{ $arsip->links() }}
+  </div>
+
 </div>
 
 <div class="modal-backdrop" id="modalLog" onclick="closeLogModal()" style="position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300; display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(3px);">

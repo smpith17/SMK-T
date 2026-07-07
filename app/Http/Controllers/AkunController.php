@@ -18,7 +18,8 @@ class AkunController extends Controller
     public function index()
     {
         $this->checkAdmin();
-        $users = User::orderBy('nama')->get();
+        // Pagination: Menampilkan 10 data per halaman
+        $users = User::orderBy('nama')->paginate(10);
         return view('kartu.akun', compact('users'));
     }
 
@@ -77,8 +78,8 @@ class AkunController extends Controller
         ];
 
         if ($request->filled('password')) {
-            $rules['password']              = 'min:6';
-            $messages['password.min']       = 'Password minimal 6 karakter.';
+            $rules['password']        = 'min:6';
+            $messages['password.min'] = 'Password minimal 6 karakter.';
         }
 
         $validator = Validator::make($request->all(), $rules, $messages);
@@ -131,15 +132,11 @@ class AkunController extends Controller
         return redirect('/akun')->with('success', "Akun \"{$user->nama}\" telah berhasil dihapus dari sistem.");
     }
 
-    /**
-     * Mereset password akun kembali bawaan 'password123'
-     */
     public function resetPassword($id)
     {
         $this->checkAdmin();
         $user = User::findOrFail($id);
 
-        // Perbaikan: Diubah menjadi password123
         $user->password = Hash::make('password123');
         $user->save();
 

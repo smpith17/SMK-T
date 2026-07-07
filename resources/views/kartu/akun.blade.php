@@ -111,6 +111,11 @@
       </tbody>
     </table>
   </div>
+  
+  <div style="padding: 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; overflow-x: auto;">
+    {{ $users->links() }}
+  </div>
+
 </div>
 
 <div class="modal-backdrop" id="modalAddUser" onclick="closeAddUserModal()" style="position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300; display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(3px);">

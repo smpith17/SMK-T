@@ -16,7 +16,7 @@
 <div class="stats-grid">
   <div class="stat-card teal">
     <div class="stat-ico">💳</div>
-    <div class="stat-val">{{ count($kartu) }}</div>
+    <div class="stat-val">{{ $kartu->total() }}</div>
     <div class="stat-lbl">Kartu aktif</div>
   </div>
   <div class="stat-card amber">
@@ -39,7 +39,7 @@
 <div class="card">
   <div class="card-header">
     <span class="card-title">Daftar Kartu Aktif</span>
-    <input class="search-box" placeholder="🔍 Cari nama..." id="searchDash" oninput="filterDashboard()">
+    <input class="search-box" placeholder="🔍 Cari nama (halaman ini)..." id="searchDash" oninput="filterDashboard()">
     <select class="sel-filter" id="filterDash" onchange="filterDashboard()">
       <option value="">Semua Status</option>
       <option value="Disimpan">Disimpan</option>
@@ -112,6 +112,11 @@
       </tbody>
     </table>
   </div>
+  
+  <div style="padding: 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; overflow-x: auto;">
+    {{ $kartu->links() }}
+  </div>
+
 </div>
 
 <form id="formAksi" method="POST" style="display:none">
@@ -137,7 +142,6 @@ let selectedStatus = '';
 function toggleDD(btn) {
   const menu = btn.nextElementSibling;
 
-  // Tutup semua dropdown lain dulu
   document.querySelectorAll('.dropdown-menu.open').forEach(m => {
     if (m !== menu) {
       m.classList.remove('open');
@@ -146,11 +150,9 @@ function toggleDD(btn) {
   });
 
   if (menu.classList.contains('open')) {
-    // Kalau sudah buka, tutup
     menu.classList.remove('open');
     menu.removeAttribute('style');
   } else {
-    // Hitung posisi tombol relatif ke viewport
     const rect = btn.getBoundingClientRect();
     menu.style.cssText = `
       position: fixed;
@@ -179,9 +181,9 @@ function showModal(type, name, id) {
   });
   selectedId = id;
   const cfg = {
-    hubungi:   { status:'Dihubungi',   title:'📞 Tandai Sudah Dihubungi',   body:`Tandai kartu milik <strong>${name}</strong> sudah dihubungi? Perubahan akan dicatat di log audit.`,                                                                       btn:'Konfirmasi',         btnCls:'btn btn-primary' },
-    diambil:   { status:'Diambil',     title:'✅ Kartu Diambil Nasabah',     body:`Konfirmasi kartu milik <strong>${name}</strong> sudah diambil setelah verifikasi identitas?`,                                                                               btn:'Konfirmasi Diambil', btnCls:'btn btn-primary' },
-    musnahkan: { status:'Dimusnahkan', title:'⚠️ Konfirmasi Pemusnahan',     body:`<span style="color:var(--red)">Apakah Anda yakin memusnahkan kartu <strong>${name}</strong>? Tindakan ini <strong>tidak dapat dibatalkan</strong>.</span>`,               btn:'Musnahkan Kartu',    btnCls:'btn btn-danger'  },
+    hubungi:   { status:'Dihubungi',   title:'📞 Tandai Sudah Dihubungi',   body:`Tandai kartu milik <strong>${name}</strong> sudah dihubungi? Perubahan akan dicatat di log audit.`,                                                                 btn:'Konfirmasi',         btnCls:'btn btn-primary' },
+    diambil:   { status:'Diambil',     title:'✅ Kartu Diambil Nasabah',    body:`Konfirmasi kartu milik <strong>${name}</strong> sudah diambil setelah verifikasi identitas?`,                                                                         btn:'Konfirmasi Diambil', btnCls:'btn btn-primary' },
+    musnahkan: { status:'Dimusnahkan', title:'⚠️ Konfirmasi Pemusnahan',    body:`<span style="color:var(--red)">Apakah Anda yakin memusnahkan kartu <strong>${name}</strong>? Tindakan ini <strong>tidak dapat dibatalkan</strong>.</span>`,               btn:'Musnahkan Kartu',    btnCls:'btn btn-danger'  },
   };
   const c = cfg[type];
   selectedStatus = c.status;

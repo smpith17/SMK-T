@@ -13,20 +13,14 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class KartuController extends Controller
 {
-    /**
-     * BARU: Menampilkan daftar semua kartu tertelan khusus untuk Jalur API (Postman)
-     */
     public function index(Request $request)
     {
-        // Mengambil semua data kartu beserta informasi petugas yang menginputnya
         $kartu = KartuTertelan::with('user_input')->get();
 
-        // Hitung sisa hari secara dinamis untuk setiap kartu
         foreach ($kartu as $k) {
             $k->sisa_hari = (int) Carbon::now()->diffInDays(Carbon::parse($k->deadline), false);
         }
 
-        // Jika request datang dari Postman / API, kirim response JSON
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
                 'success' => true,
@@ -40,14 +34,20 @@ class KartuController extends Controller
 
     public function dashboard()
     {
+        // Hitung total kritis langsung dari database agar tidak terpengaruh pagination
+        $kritisCount = KartuTertelan::whereNotIn('status', ['Diambil', 'Dimusnahkan'])
+            ->whereDate('deadline', '<=', Carbon::now()->addDays(3))
+            ->count();
+
+        // Pagination: Menampilkan 10 data per halaman pada dashboard
         $kartu = KartuTertelan::with('user_input')
-            ->whereNotIn('status', ['Diambil', 'Dimusnahkan'])->get();
+            ->whereNotIn('status', ['Diambil', 'Dimusnahkan'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
         foreach ($kartu as $k) {
             $k->sisa_hari = (int) Carbon::now()->diffInDays(Carbon::parse($k->deadline), false);
         }
-
-        $kritisCount = $kartu->where('sisa_hari', '<=', 3)->count();
 
         $selesaiBulanIni = KartuTertelan::whereIn('status', ['Diambil', 'Dimusnahkan'])
             ->whereMonth('updated_at', Carbon::now()->month)
@@ -57,9 +57,6 @@ class KartuController extends Controller
         return view('kartu.dashboard', compact('kartu', 'kritisCount', 'selesaiBulanIni'));
     }
 
-    /**
-     * HYBRID: Menyimpan data kartu baru (Mendukung Web Form & Postman API)
-     */
     public function simpan(Request $request)
     {
         $request->validate([
@@ -81,7 +78,6 @@ class KartuController extends Controller
             'input_oleh'    => Auth::id(), 
         ]);
 
-        // Kondisional: Jika mendeteksi request API, return JSON murni status 210/201
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
                 'success' => true,
@@ -90,13 +86,9 @@ class KartuController extends Controller
             ], 201);
         }
 
-        // Jika dari form website biasa, lakukan redirect
         return redirect('/input')->with('success', 'Data kartu tertelan berhasil disimpan!');
     }
 
-    /**
-     * HYBRID: Mengubah status kartu (Mendukung Web Action & Postman API)
-     */
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -107,7 +99,6 @@ class KartuController extends Controller
         $kartu->status = $request->status;
         $kartu->save(); 
 
-        // Kondisional: Jika mendeteksi request API, return JSON murni status 200 OK
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
                 'success' => true,
@@ -116,22 +107,22 @@ class KartuController extends Controller
             ], 200);
         }
 
-        // Jika dari tombol di website, kembalikan ke halaman sebelumnya
         return redirect()->back()->with('success', 'Status kartu berhasil diperbarui!');
     }
 
     public function arsip()
     {
+        // Pagination: Menampilkan 15 data per halaman pada arsip
         $arsip = KartuTertelan::with('user_input')
             ->whereIn('status', ['Diambil', 'Dimusnahkan'])
-            ->get();
+            ->orderBy('updated_at', 'desc')
+            ->paginate(15);
 
         foreach ($arsip as $a) {
             $a->tanggal_selesai = Carbon::parse($a->updated_at)->format('d M Y');
             $a->tanggal_masuk   = Carbon::parse($a->tanggal_masuk)->format('d M Y');
             $a->status_akhir    = $a->status;
 
-            // Mengambil log asli dari tabel log_audit bawaan sistem dikombinasikan dengan tabel users
             $dbLogs = DB::table('log_audit')
                 ->join('users', 'log_audit.user_id', '=', 'users.id')
                 ->where('log_audit.kartu_id', $a->id)
@@ -141,7 +132,6 @@ class KartuController extends Controller
 
             $formattedLogs = [];
 
-            // Melacak seluruh log perubahan dari tabel log_audit secara dinamis (Termasuk log input pertama)
             foreach ($dbLogs as $log) {
                 $formattedLogs[] = [
                     'status' => $log->new_status ?? $log->action,
@@ -150,7 +140,6 @@ class KartuController extends Controller
                 ];
             }
 
-            // Menyisipkan hasil format ke properti dinamis model agar dibaca di Blade
             $a->custom_logs = $formattedLogs;
         }
 
@@ -180,17 +169,11 @@ class KartuController extends Controller
         return Excel::download(new RekapMingguanExport($data), 'Rekap_Mingguan_SMKT.xlsx');
     }
 
-    /**
-     * REVISI SAKTI: Menghapus data kartu beserta log_audit yang mengikatnya
-     */
     public function destroy($id)
     {
         $kartu = KartuTertelan::findOrFail($id);
         
-        // 1. Bersihkan dulu history log audit biar MySQL mengizinkan penghapusan
         DB::table('log_audit')->where('kartu_id', $id)->delete();
-
-        // 2. Sekarang baru aman untuk menghapus data kartunya
         $kartu->delete();
 
         return response()->json([

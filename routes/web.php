@@ -11,11 +11,12 @@ Route::get('/', function () {
     return view('login');
 })->name('login');
 
-Route::post('/login', [AuthController::class, 'login']);
+// Perlindungan Brute-Force: Maksimal 5 kali percobaan login per menit
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::get('/logout', [AuthController::class, 'logout']);
 
-// --- RUTE TERPROTEKSI (Wajib Login) ---
-Route::middleware('auth')->group(function () {
+// --- RUTE TERPROTEKSI (Wajib Login & Dibatasi 60 Request/Menit) ---
+Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 
     // ==========================================
     // 1. SEMUA ROLE (Satpam, CS, Admin)
